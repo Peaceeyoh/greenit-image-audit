@@ -67,13 +67,9 @@ python image_audit.py path\to\page.html --out out --gco2-per-gb 250
 
 ## Known limits
 
-- **Images loaded only via CSS or JavaScript are not found.** Only `<img>`
-  tags in the static HTML are scanned. Background images, lazy-loading
-  scripts and CSS `url()` references are out of scope.
-- Only `<img>` `src` attributes are resolved; `srcset`/`data-src` variants
-  are not followed.
-- An `<img>` with a `width` attribute effectively allows up to `2 × width`
-  pixels (per the task spec), but this is applied as the global maximum
-  width, not per-tag.
-- External (absolute `http(s)` / `//` ) image URLs are not downloaded;
-  only local files on disk are audited.
+- Only <img> tags with a local src are found; images loaded by CSS (background-image) or JavaScript are not found.
+- SVG, corrupt files, external (http, //, data:) and missing files are listed as skipped and not counted.
+- Two external images with the same file name overwrite each other in the _external folder.
+- Re-encoding an already compressed JPEG at quality 80 saves little; the main saving comes from resizing wide images.
+- The target width is a fixed maximum (default 1600 px, or 2 x the width attribute); the real displayed size is not measured.
+- Tested on one made-up page and one saved page of a charity website.

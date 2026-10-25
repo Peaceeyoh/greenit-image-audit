@@ -128,17 +128,31 @@ def main():
     rows = []
     total_before = 0
     total_after = 0
+    skipped = 0
 
     for src in parser.srcs:
+        # Remote or inline references are not local raster files.
+        if src.startswith(("http://", "https://", "//", "data:")):
+            rows.append((src, "", "", "", "skipped: not a local file"))
+            skipped += 1
+            continue
+
         image_file = find_image_files(src, html_dir)
         if not image_file:
-            rows.append((src, "MISSING", "", "", ""))
+            rows.append((src, "", "", "", "skipped: missing"))
+            skipped += 1
+            continue
+
+        try:
+            with Image.open(image_file) as im:
+                width, height = im.size
+                fmt = im.format or "UNKNOWN"
+        except Exception:
+            rows.append((src, "", "", "", "skipped: not a raster image"))
+            skipped += 1
             continue
 
         size = os.path.getsize(image_file)
-        with Image.open(image_file) as im:
-            width, height = im.size
-            fmt = im.format or "UNKNOWN"
 
         # Effective allowed width: img width attribute * 2, else --max-width.
         # We don't have per-img width easily here; use the global max.
@@ -183,7 +197,11 @@ def main():
     print(f"{header[0]:<40}{header[1]:>12} {header[2]:<8}{header[3]:>12}  {header[4]}")
     print("-" * 100)
     for src, size, fmt, pixels, flag in rows:
-        print(f"{src[:40]:<40}{size:>12} {fmt:<8}{pixels:>12}  {flag}")
+        if len(src) > 40:
+            shown = "..." + src[-37:]
+        else:
+            shown = src
+        print(f"{shown:<40}{size:>12} {fmt:<8}{pixels:>12}  {flag}")
     print("-" * 100)
 
     # Summary.
@@ -198,9 +216,11 @@ def main():
         print(f"  image bytes after : {total_after} B")
         print(f"  saving            : {saving_bytes} B ({saving_kb:.1f} kB)")
         print(f"  CO2e saved        : {g_co2:.4f} g")
+        print(f"  skipped images    : {skipped}")
     else:
         print(f"\nSummary:")
         print(f"  image bytes before: {total_before} B")
+        print(f"  skipped images    : {skipped}")
         print(f"  (run with --out to write optimised copies and see savings)")
 
 
