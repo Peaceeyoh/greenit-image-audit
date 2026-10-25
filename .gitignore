@@ -1,0 +1,8 @@
+# Output folders from image_audit.py
+out/
+tests/out/
+
+# Python
+__pycache__/
+*.pyc
+tests/out*/
